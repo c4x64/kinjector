@@ -26,6 +26,7 @@ The Next.js app at the repo root is deployed at
 [kinjector.vercel.app](https://kinjector.vercel.app). The home page reads
 `source/`, while [`/git`](https://kinjector.vercel.app/git) fetches the same
 files from GitHub at request time and revalidates every five minutes.
+Every push to `main` deploys production through the Vercel Git integration.
 
 ```bash
 npm install
