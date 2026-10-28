@@ -112,6 +112,5 @@ jobs:
         with:
           name: kinjector-${{ matrix.label }}-check
           path: |
-            kinjector/source/*.ko
-            kinjector/source/*.mod.c
+            kinjector/source
           if-no-files-found: warn
