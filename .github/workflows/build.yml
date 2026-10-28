@@ -106,7 +106,10 @@ jobs:
         run: |
           make -C kernel ARCH=arm64 \
             CROSS_COMPILE=aarch64-linux-gnu- \
-            M=$PWD/source modules -j"$(nproc)"
+            M=$PWD/source modules -j"$(nproc)" \
+            CC=gcc LLVM=0 2>&1 || make -C kernel ARCH=arm64 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            M=$PWD/source modules -j"$(nproc)" 2>&1
       - name: Upload .ko and .mod.c artifacts
         uses: actions/upload-artifact@v4
         with:
