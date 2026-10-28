@@ -30,18 +30,107 @@ jobs:
 
   module:
     name: module
-    # 5.15 headers: the module targets the Android msm-5.15 vendor line.
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Samsung Galaxy F22 (SM-E225F) — MediaTek Helio G80, arm64 4.14
+          - label: f22
+            tree: samsung-f22
+            repo: Samsung-MT6769-Devs/kernel_samsung_f22
+            branch: stock
+            defconfig: f22_defconfig
+            cross: aarch64-linux-gnu-
+          # AOSP GKI branches, arm64
+          - label: gki-5.4
+            tree: gki
+            repo: kernel/common
+            branch: android11-5.4
+            defconfig: gki_defconfig
+            cross: aarch64-linux-gnu-
+          - label: gki-5.10
+            tree: gki
+            repo: kernel/common
+            branch: android12-5.10
+            defconfig: gki_defconfig
+            cross: aarch64-linux-gnu-
+          - label: gki-5.15
+            tree: gki
+            repo: kernel/common
+            branch: android13-5.15
+            defconfig: gki_defconfig
+            cross: aarch64-linux-gnu-
+          - label: gki-6.1
+            tree: gki
+            repo: kernel/common
+            branch: android14-6.1
+            defconfig: gki_defconfig
+            cross: aarch64-linux-gnu-
+          - label: gki-6.6
+            tree: gki
+            repo: kernel/common
+            branch: android15-6.6
+            defconfig: gki_defconfig
+            cross: aarch64-linux-gnu-
+          - label: gki-6.12
+            tree: gki
+            repo: kernel/common
+            branch: android16-6.12
+            defconfig: gki_defconfig
+            cross: aarch64-linux-gnu-
+          - label: gki-6.18
+            tree: gki
+            repo: kernel/common
+            branch: android17-6.18
+            defconfig: gki_defconfig
+            cross: aarch64-linux-gnu-
     steps:
       - uses: actions/checkout@v5
-      - name: Install toolchain and kernel headers
+        with:
+          path: kinjector
+      - name: Install toolchain
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential bc flex bison libssl-dev linux-headers-generic
-      - name: Build kinjector.ko
-        working-directory: source
+            build-essential bc flex bison libssl-dev gcc-aarch64-linux-gnu
+      - name: Fetch kernel tree
+        working-directory: kinjector
         run: |
-          KDIR="$(ls -d /usr/src/linux-headers-* | grep -v -- '-common' | sort -V | tail -n1)"
-          echo "KDIR=$KDIR"
-          make KDIR="$KDIR" ARCH="$(uname -m)" CROSS_COMPILE=
+          set -e
+          if [ "${{ matrix.tree }}" = "samsung-f22" ]; then
+            git clone --depth 1 --branch ${{ matrix.branch }} \
+              https://github.com/${{ matrix.repo }}.git kernel
+          else
+            git clone --depth 1 --branch ${{ matrix.branch }} \
+              https://android.googlesource.com/kernel/common kernel
+          fi
+      - name: Configure kernel
+        working-directory: kinjector
+        run: |
+          set -e
+          cd kernel
+          if [ "${{ matrix.tree }}" = "gki" ]; then
+            # GKI turns on LTO/CFI and module signing; disable them so the
+            # module compiles with the plain gcc cross toolchain.
+            make ARCH=arm64 olddefconfig \
+              CONFIG_LTO=n CONFIG_CFI=n CONFIG_MODULE_SIG=n
+          else
+            make ARCH=arm64 ${{ matrix.defconfig }}
+          fi
+          make ARCH=arm64 modules_prepare -j"$(nproc)"
+      - name: Build kinjector.ko
+        working-directory: kinjector
+        run: |
+          set -e
+          make -C kernel ARCH=arm64 \
+            CROSS_COMPILE=${{ matrix.cross }} \
+            M=$PWD/source modules -j"$(nproc)"
+      - name: Upload module
+        uses: actions/upload-artifact@v4
+        with:
+          name: kinjector-${{ matrix.label }}
+          path: |
+            kinjector/source/*.ko
+            kinjector/source/Module.symvers
+          if-no-files-found: error
