@@ -1,8 +1,7 @@
 import Image from "next/image";
 import CopyButton from "@/components/CopyButton";
-import CodeViewer from "@/components/CodeViewer";
 import SiteNav from "@/components/SiteNav";
-import { getSourceFiles, REPO_URL } from "@/lib/source";
+import { REPO_URL } from "@/lib/source";
 
 function Cmd({ title, children }: { title: string; children: string }) {
   return (
@@ -17,8 +16,6 @@ function Cmd({ title, children }: { title: string; children: string }) {
 }
 
 export default async function Page() {
-  const files = await getSourceFiles();
-
   return (
     <>
       <SiteNav />
@@ -479,27 +476,25 @@ adb shell su -c '/data/local/tmp/kinject com.app \
               </div>
             </div>
 
-            <CodeViewer files={files} />
-
-            <p
-              className="mono"
-              style={{
-                marginTop: 16,
-                fontSize: 11.5,
-                color: "var(--dimmer)",
-              }}
-            >
-              {files.reduce((n, f) => n + f.lines, 0)} lines across{" "}
-              {files.length} files ·{" "}
+            <div className="source-links">
+              <a className="btn btn-primary" href="/git/tree/source">
+                Browse source
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                  <path d="M2 8h12M9.5 3.5 14 8l-4.5 4.5" />
+                </svg>
+              </a>
               <a
+                className="btn btn-ghost"
                 href={`${REPO_URL}/tree/main/source`}
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: "var(--dim)" }}
               >
-                source/ on GitHub ↗
+                source/ on GitHub
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                  <path d="M5 11 11 5M6 5h5v5" />
+                </svg>
               </a>
-            </p>
+            </div>
           </section>
         </div>
 

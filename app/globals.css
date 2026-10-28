@@ -802,6 +802,15 @@ td.res {
   width: 40%;
 }
 
+/* source links */
+
+.source-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
 /* source browser */
 
 .browser {
