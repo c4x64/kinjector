@@ -83,7 +83,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            gcc-aarch64-linux-gnu bc flex bison libssl-dev
+            gcc-aarch64-linux-gnu bc flex bison libssl-dev libelf-dev
       - name: Fetch kernel tree
         working-directory: kinjector
         run: |
