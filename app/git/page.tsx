@@ -1,66 +1,100 @@
 import type { Metadata } from "next";
-import CodeViewer from "@/components/CodeViewer";
+import Link from "next/link";
 import SiteNav from "@/components/SiteNav";
-import { getSourceFiles, REPO_URL } from "@/lib/source";
+import RepoHeader from "@/components/git/RepoHeader";
+import CommitStrip from "@/components/git/CommitStrip";
+import Breadcrumbs from "@/components/git/Breadcrumbs";
+import TreeTable from "@/components/git/TreeTable";
+import CopyButton from "@/components/CopyButton";
+import {
+  REPO_URL,
+  getLatestCommit,
+  getLocalTree,
+  getRepo,
+  getTree,
+  listDir,
+  relativeTime,
+} from "@/lib/git";
 
 export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "git — kinjector",
   description:
-    "Live source browser for c4x64/kinjector, fetched from GitHub on every revalidation.",
+    "Repository browser for c4x64/kinjector: tree, blobs, commit log, all fetched from GitHub.",
 };
 
-export default async function GitPage() {
-  const files = await getSourceFiles();
-  const lines = files.reduce((n, f) => n + f.lines, 0);
-  const live = files.every((f) => f.origin === "github");
+export default async function GitSummary() {
+  const [repo, tree, latest] = await Promise.all([
+    getRepo(),
+    getTree(),
+    getLatestCommit(),
+  ]);
+
+  const entries = tree ? tree.entries : await getLocalTree();
+  const live = Boolean(tree);
+  const clone = `git clone ${REPO_URL}.git`;
 
   return (
     <>
       <SiteNav />
 
-      <main>
-        <div className="wrap">
-          <section className="git-head">
-            <div className="eyebrow">git / source browser</div>
+      <main className="wrap">
+        <RepoHeader repo={repo} active="summary" />
 
-            <h1 className="git-title">
-              c4x64/<em>kinjector</em>
-            </h1>
+        {!live ? (
+          <div className="fallback-note">
+            GitHub API unavailable right now — showing the deployed snapshot.
+          </div>
+        ) : null}
 
-            <p className="git-sub">
-              Fetched from <code>raw.githubusercontent.com</code> at request
-              time and cached for five minutes. What you read here is the
-              branch, not a bundled copy.
-            </p>
+        <div className="git-layout">
+          <div className="git-main">
+            <CommitStrip commit={latest} />
+            <Breadcrumbs path="" />
+            <TreeTable entries={listDir(entries, "")} dir="" />
+          </div>
 
-            <div className="chips">
-              <span className="chip">main</span>
-              <span className={live ? "chip chip-live" : "chip"}>
-                <span className="chip-dot" />
-                {live ? "live from github" : "bundled fallback"}
-              </span>
-              <span className="chip">
-                {files.length} files · {lines} lines
-              </span>
-              <a
-                className="chip chip-link"
-                href={`${REPO_URL}/tree/main/source`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                open on github ↗
-              </a>
-            </div>
-          </section>
+          <aside className="git-aside">
+            <section className="panel">
+              <h2>clone</h2>
+              <pre className="clone">{clone}</pre>
+              <CopyButton text={clone} label="copy" />
+            </section>
 
-          <CodeViewer files={files} />
+            <section className="panel">
+              <h2>about</h2>
+              <p>
+                {repo?.description ??
+                  "Kernel-assisted GOT trampoline injector for Android arm64."}
+              </p>
+              <dl className="props">
+                <div>
+                  <dt>branch</dt>
+                  <dd>main</dd>
+                </div>
+                <div>
+                  <dt>stars</dt>
+                  <dd>{repo?.stargazers_count ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt>last push</dt>
+                  <dd>{repo ? relativeTime(repo.pushed_at) : "—"}</dd>
+                </div>
+              </dl>
+            </section>
 
-          <p className="git-foot">
-            source/ · branch main · revalidated every 300s ·{" "}
-            <a href="/">back to the module</a>
-          </p>
+            <section className="panel">
+              <h2>views</h2>
+              <div className="panel-links">
+                <Link href="/git/tree">tree</Link>
+                <Link href="/git/log">log</Link>
+                <a href={REPO_URL} target="_blank" rel="noreferrer">
+                  github ↗
+                </a>
+              </div>
+            </section>
+          </aside>
         </div>
       </main>
 
@@ -71,8 +105,8 @@ export default async function GitPage() {
             <a href={REPO_URL} target="_blank" rel="noreferrer">
               github
             </a>
-            <a href="/">home</a>
-            <a href="/git">git</a>
+            <Link href="/">home</Link>
+            <Link href="/git">git</Link>
           </div>
         </footer>
       </div>

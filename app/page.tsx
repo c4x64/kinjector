@@ -70,7 +70,7 @@ export default async function Page() {
               </div>
               <div className="term-body" role="img" aria-label="dry run and real run output">
                 <div className="row"><span className="t-prompt">$ </span><span className="t-cmd">insmod kinjector.ko</span></div>
-                <div className="row"><span className="t-prompt">$ </span><span className="t-cmd">kinject com.dts.freefireth …/libhgloader.so --dry</span></div>
+                <div className="row"><span className="t-prompt">$ </span><span className="t-cmd">kinject com.app …/libhgloader.so --dry</span></div>
                 <div className="t-gap" />
                 <div className="row"><span className="t-key">  pid      </span><span className="t-val">18422</span></div>
                 <div className="row"><span className="t-key">  lib      </span><span className="t-val">libil2cpp.so @ 0x7a3c000000</span></div>
@@ -78,7 +78,7 @@ export default async function Page() {
                 <div className="row"><span className="t-key">  stub     </span><span className="t-val">0x7a3c100000</span></div>
                 <div className="row"><span className="t-key">  result   </span><span className="t-ok">ok</span></div>
                 <div className="t-gap" />
-                <div className="row"><span className="t-prompt">$ </span><span className="t-cmd">kinject com.dts.freefireth …/libhgloader.so --hide</span></div>
+                <div className="row"><span className="t-prompt">$ </span><span className="t-cmd">kinject com.app …/libhgloader.so --hide</span></div>
                 <div className="t-gap" />
                 <div className="row"><span className="t-dim">  kinjector: </span><span className="t-ok">GOT restored</span><span className="t-dim">, hook window closed</span></div>
                 <div className="row"><span className="t-dim">  kinjector: dlopen(</span><span className="t-val">&quot;libhgloader.so&quot;</span><span className="t-dim">) -&gt; </span><span className="t-val">0x7f4c2a1000</span></div>
@@ -283,8 +283,8 @@ make`}</Cmd>
                   </p>
                   <Cmd title="shell">{String.raw`adb push kinjector.ko kinject /data/local/tmp/
 adb shell su -c 'insmod /data/local/tmp/kinjector.ko'
-adb shell su -c '/data/local/tmp/kinject com.dts.freefireth \
-  /data/data/com.dts.freefireth/files/libhgloader.so --dry'`}</Cmd>
+adb shell su -c '/data/local/tmp/kinject com.app \
+  /data/data/com.app/files/libhgloader.so --dry'`}</Cmd>
                 </div>
 
                 <div className="callout">
@@ -298,8 +298,8 @@ adb shell su -c '/data/local/tmp/kinject com.dts.freefireth \
 
                 <div>
                   <h3>Inject</h3>
-                  <Cmd title="shell">{String.raw`adb shell su -c '/data/local/tmp/kinject com.dts.freefireth \
-  /data/data/com.dts.freefireth/files/libhgloader.so --hide'`}</Cmd>
+                  <Cmd title="shell">{String.raw`adb shell su -c '/data/local/tmp/kinject com.app \
+  /data/data/com.app/files/libhgloader.so --hide'`}</Cmd>
                 </div>
               </div>
             </div>
