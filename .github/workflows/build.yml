@@ -29,7 +29,7 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
 
   module:
-    name: module compile check
+    name: module compile check — ${{ matrix.label }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -96,10 +96,22 @@ jobs:
       - name: Configure kernel
         working-directory: kinjector/kernel
         run: |
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
-            "${{ matrix.defconfig }}"
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
-            modules_prepare -j"$(nproc)"
+          set -euo pipefail
+          # Vendor trees (f22) embed a hard-coded clang path that doesn't
+          # exist on the runner. Override CC to the system gcc and stub out
+          # the clang variable so the top-level Makefile doesn't try to
+          # invoke it during defconfig / modules_prepare.
+          COMMON_VARS="ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=aarch64-linux-gnu-gcc"
+
+          make $COMMON_VARS "${{ matrix.defconfig }}"
+
+          # Disable stack-protector knob that requires clang on vendor trees.
+          # GKI defconfigs don't set it to STRONG so this is a no-op there.
+          ./scripts/config --disable CONFIG_CC_STACKPROTECTOR_STRONG \
+                           --enable  CONFIG_CC_STACKPROTECTOR_REGULAR \
+            2>/dev/null || true
+
+          make $COMMON_VARS modules_prepare -j"$(nproc)"
 
       - name: Compile-check kinjector module
         working-directory: kinjector
@@ -108,6 +120,7 @@ jobs:
           make -C kernel \
             ARCH=arm64 \
             CROSS_COMPILE=aarch64-linux-gnu- \
+            CC=aarch64-linux-gnu-gcc \
             M="$PWD/source" \
             modules \
             -j"$(nproc)"
