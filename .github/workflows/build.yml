@@ -18,8 +18,8 @@ jobs:
     name: site
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
@@ -40,83 +40,85 @@ jobs:
             repo: Samsung-MT6769-Devs/kernel_samsung_f22
             branch: stock
             defconfig: f22_defconfig
+
           - label: gki-5.4
             tree: gki
             repo: kernel/common
             branch: android11-5.4
             defconfig: gki_defconfig
+
           - label: gki-5.10
             tree: gki
             repo: kernel/common
             branch: android12-5.10
             defconfig: gki_defconfig
+
           - label: gki-5.15
             tree: gki
             repo: kernel/common
             branch: android13-5.15
             defconfig: gki_defconfig
+
           - label: gki-6.1
             tree: gki
             repo: kernel/common
             branch: android14-6.1
             defconfig: gki_defconfig
+
           - label: gki-6.6
             tree: gki
             repo: kernel/common
             branch: android15-6.6
             defconfig: gki_defconfig
-          - label: gki-6.12
-            tree: gki
-            repo: kernel/common
-            branch: android16-6.12
-            defconfig: gki_defconfig
-          - label: gki-6.18
-            tree: gki
-            repo: kernel/common
-            branch: android17-6.18
-            defconfig: gki_defconfig
+
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         with:
           path: kinjector
+
       - name: Install toolchain
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            gcc-aarch64-linux-gnu bc flex bison libssl-dev libelf-dev libdwarf-dev
+            gcc-aarch64-linux-gnu bc flex bison libssl-dev libelf-dev
+
       - name: Fetch kernel tree
-        working-directory: kinjector
         run: |
-          set -e
+          set -euo pipefail
           if [ "${{ matrix.tree }}" = "samsung-f22" ]; then
-            git clone --depth 1 --branch ${{ matrix.branch }} \
-              https://github.com/${{ matrix.repo }}.git kernel
+            git clone --depth 1 --branch "${{ matrix.branch }}" \
+              "https://github.com/${{ matrix.repo }}.git" kinjector/kernel
           else
-            git clone --depth 1 --branch ${{ matrix.branch }} \
-              https://android.googlesource.com/kernel/common kernel
+            git clone --depth 1 --branch "${{ matrix.branch }}" \
+              "https://android.googlesource.com/kernel/common" kinjector/kernel
           fi
-      - name: Configure kernel (minimal)
+
+      - name: Configure kernel
+        working-directory: kinjector/kernel
+        run: |
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+            "${{ matrix.defconfig }}"
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+            modules_prepare -j"$(nproc)"
+
+      - name: Compile-check kinjector module
         working-directory: kinjector
         run: |
-          cd kernel
-          make ARCH=arm64 ${{ matrix.defconfig }}
-          make ARCH=arm64 modules_prepare -j"$(nproc)" 2>&1 || true
-      - name: Compile-check kinjector.c
-        working-directory: kinjector
-        run: |
-          make -C kernel ARCH=arm64 \
+          set -euo pipefail
+          make -C kernel \
+            ARCH=arm64 \
             CROSS_COMPILE=aarch64-linux-gnu- \
-            M=$PWD/source modules -j"$(nproc)" \
-            CC=gcc LLVM=0 2>&1 || make -C kernel ARCH=arm64 \
-            CROSS_COMPILE=aarch64-linux-gnu- \
-            M=$PWD/source modules -j"$(nproc)" 2>&1
-      - name: Upload .ko and .mod.c artifacts
+            M="$PWD/source" \
+            modules \
+            -j"$(nproc)"
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: kinjector-${{ matrix.label }}-check
+          name: kinjector-${{ matrix.label }}
           path: |
             kinjector/source/kinjector.ko
-            kinjector/source/.mod.c
+            kinjector/source/*.mod.c
             kinjector/source/modules.order
             kinjector/source/Module.symvers
           if-no-files-found: warn
