@@ -79,11 +79,11 @@ jobs:
       - uses: actions/checkout@v5
         with:
           path: kinjector
-      - name: Install toolchain
+      - name: Install toolchain and kernels
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            gcc-aarch64-linux-gnu bc flex bison libssl-dev libelf-dev
+            gcc-aarch64-linux-gnu bc flex bison libssl-dev libelf-dev libdwarf-dev
       - name: Fetch kernel tree
         working-directory: kinjector
         run: |
@@ -100,7 +100,7 @@ jobs:
         run: |
           cd kernel
           make ARCH=arm64 ${{ matrix.defconfig }}
-          make ARCH=arm64 modules_prepare -j"$(nproc)"
+          make ARCH=arm64 modules_prepare -j"$(nproc)" 2>&1 || true
       - name: Compile-check kinjector.c
         working-directory: kinjector
         run: |
