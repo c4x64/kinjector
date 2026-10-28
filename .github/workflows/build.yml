@@ -18,8 +18,8 @@ jobs:
     name: site
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -30,9 +30,10 @@ jobs:
 
   module:
     name: module
-    runs-on: ubuntu-24.04
+    # 5.15 headers: the module targets the Android msm-5.15 vendor line.
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install toolchain and kernel headers
         run: |
           sudo apt-get update
