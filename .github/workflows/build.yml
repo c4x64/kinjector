@@ -106,11 +106,14 @@ jobs:
         run: |
           make -C kernel ARCH=arm64 \
             CROSS_COMPILE=aarch64-linux-gnu- \
-            M=$PWD/source modules -j"$(nproc)" 2>&1 || true
+            M=$PWD/source modules -j"$(nproc)"
       - name: Upload .ko and .mod.c artifacts
         uses: actions/upload-artifact@v4
         with:
           name: kinjector-${{ matrix.label }}-check
           path: |
-            kinjector/source
+            kinjector/source/kinjector.ko
+            kinjector/source/.mod.c
+            kinjector/source/modules.order
+            kinjector/source/Module.symvers
           if-no-files-found: warn
