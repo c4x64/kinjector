@@ -1,4 +1,4 @@
-# kinject
+# kinjector
 
 Kernel-assisted GOT trampoline injector for Android arm64.
 
@@ -22,8 +22,10 @@ lib/              reads source/ at build time
 
 ## Site
 
-The site at the repo root is a Next.js app deployed on Vercel. It reads
-`source/` at build time, highlights every file, and redeploys on push.
+The Next.js app at the repo root is deployed at
+[kinjector.vercel.app](https://kinjector.vercel.app). The home page reads
+`source/`, while [`/git`](https://kinjector.vercel.app/git) fetches the same
+files from GitHub at request time and revalidates every five minutes.
 
 ```bash
 npm install

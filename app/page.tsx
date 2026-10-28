@@ -1,9 +1,8 @@
 import Image from "next/image";
 import CopyButton from "@/components/CopyButton";
 import CodeViewer from "@/components/CodeViewer";
-import { getSourceFiles } from "@/lib/source";
-
-const REPO = "https://github.com/c4x64/kinject";
+import SiteNav from "@/components/SiteNav";
+import { getSourceFiles, REPO_URL } from "@/lib/source";
 
 function Cmd({ title, children }: { title: string; children: string }) {
   return (
@@ -22,35 +21,7 @@ export default async function Page() {
 
   return (
     <>
-      <header className="nav">
-        <div className="wrap nav-inner">
-          <a className="brand" href="#top" aria-label="kinject home">
-            <span className="brand-mark">K</span>
-            <b>kinject</b>
-            <span>/fixed</span>
-          </a>
-
-          <nav className="nav-links" aria-label="Sections">
-            <a href="#mechanism">mechanism</a>
-            <a href="#constraints">constraints</a>
-            <a href="#build">build</a>
-            <a href="#audit">audit</a>
-            <a href="#source">source</a>
-          </nav>
-
-          <a
-            className="nav-cta"
-            href={REPO}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
-            </svg>
-            github
-          </a>
-        </div>
-      </header>
+      <SiteNav />
 
       <main id="top">
         {/* ------------------------------------------------------------ hero */}
@@ -60,7 +31,7 @@ export default async function Page() {
               <div className="eyebrow">kernel module · arm64 · android</div>
 
               <h1 className="title">
-                kinject<em>.</em>
+                kinjector<em>.</em>
               </h1>
 
               <p className="hero-sub">
@@ -81,7 +52,7 @@ export default async function Page() {
                     <path d="M8 2v12M3.5 9.5 8 14l4.5-4.5" />
                   </svg>
                 </a>
-                <a className="btn btn-ghost" href={REPO} target="_blank" rel="noreferrer">
+                <a className="btn btn-ghost" href={REPO_URL} target="_blank" rel="noreferrer">
                   Repository
                   <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
                     <path d="M5 11 11 5M6 5h5v5" />
@@ -95,7 +66,7 @@ export default async function Page() {
                 <span className="dot" />
                 <span className="dot" />
                 <span className="dot live" />
-                <span className="term-title">kinject — /dev/kinjector</span>
+                <span className="term-title">kinjector — /dev/kinjector</span>
               </div>
               <div className="term-body" role="img" aria-label="dry run and real run output">
                 <div className="row"><span className="t-prompt">$ </span><span className="t-cmd">insmod kinjector.ko</span></div>
@@ -497,9 +468,13 @@ adb shell su -c '/data/local/tmp/kinject com.dts.freefireth \
               <div>
                 <h2>The whole module, in the repo.</h2>
                 <p>
-                  Every file the module is built from, read straight out of the
-                  git repository at build time. Push a change, the site
-                  redeploys with it.
+                  Every file the module is built from, fetched from the GitHub
+                  repository. The dedicated browser at{" "}
+                  <a href="/git" style={{ color: "var(--accent)" }}>
+                    /git
+                  </a>{" "}
+                  pulls the same files at request time, so it always matches the
+                  branch.
                 </p>
               </div>
             </div>
@@ -517,7 +492,7 @@ adb shell su -c '/data/local/tmp/kinject com.dts.freefireth \
               {files.reduce((n, f) => n + f.lines, 0)} lines across{" "}
               {files.length} files ·{" "}
               <a
-                href={`${REPO}/tree/main/source`}
+                href={`${REPO_URL}/tree/main/source`}
                 target="_blank"
                 rel="noreferrer"
                 style={{ color: "var(--dim)" }}
@@ -570,14 +545,14 @@ adb shell su -c '/data/local/tmp/kinject com.dts.freefireth \
       <div className="wrap">
         <footer>
           <div>
-            kinject · arm64 · GKI 5.10 – 6.1 · built for a device, not a
+            kinjector · arm64 · GKI 5.10 – 6.1 · built for a device, not a
             whitepaper
           </div>
           <div className="foot-links">
-            <a href={REPO} target="_blank" rel="noreferrer">
+            <a href={REPO_URL} target="_blank" rel="noreferrer">
               github
             </a>
-            <a href={`${REPO}#readme`} target="_blank" rel="noreferrer">
+            <a href={`${REPO_URL}#readme`} target="_blank" rel="noreferrer">
               readme
             </a>
             <a href="#colophon">colophon</a>
