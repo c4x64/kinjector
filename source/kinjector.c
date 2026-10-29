@@ -47,7 +47,9 @@
 #include <linux/slab.h>
 #include <linux/sched.h>
 #include <linux/sched/mm.h>
+#include <linux/sched/signal.h>
 #include <linux/sched/task.h>
+#include <linux/mmu_context.h>
 #include <linux/mm.h>
 #include <linux/mman.h>
 #include <linux/kthread.h>
@@ -78,9 +80,13 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
 #  define KINJ_MMAP_RLOCK(mm)   mmap_read_lock(mm)
 #  define KINJ_MMAP_RUNLOCK(mm) mmap_read_unlock(mm)
+#  define KINJ_USE_MM(mm)       kthread_use_mm(mm)
+#  define KINJ_UNUSE_MM(mm)     kthread_unuse_mm(mm)
 #else
 #  define KINJ_MMAP_RLOCK(mm)   down_read(&(mm)->mmap_sem)
 #  define KINJ_MMAP_RUNLOCK(mm) up_read(&(mm)->mmap_sem)
+#  define KINJ_USE_MM(mm)       use_mm(mm)
+#  define KINJ_UNUSE_MM(mm)     unuse_mm(mm)
 #endif
 
 #ifndef R_AARCH64_JUMP_SLOT
@@ -299,10 +305,15 @@ static int kinj_find_lib(struct mm_struct *mm, const char *name,
                          struct kinj_lib *out)
 {
     struct vm_area_struct *vma;
+    unsigned long addr = 0;
 
+    // find_vma() hides whether the kernel uses the old rbtree/list or the
+    // maple tree (6.1+), and is exported on every version we target.
     KINJ_MMAP_RLOCK(mm);
-    for (vma = mm->mmap; vma; vma = vma->vm_next) {
+    while ((vma = find_vma(mm, addr)) != NULL) {
         const char *fn;
+
+        addr = vma->vm_end;
 
         if (!vma->vm_file || vma->vm_pgoff != 0)
             continue;
@@ -327,7 +338,7 @@ static int kinj_elf_open(struct task_struct *t, struct mm_struct *mm,
 {
     Elf64_Ehdr eh;
     Elf64_Phdr *ph = NULL;
-    Elf64_Dyn dyn[KINJ_MAX_DYN];
+    Elf64_Dyn *dyn = NULL;
     unsigned long best = 0;
     int i, ret = -EINVAL, ndyn = 0;
 
@@ -389,6 +400,14 @@ static int kinj_elf_open(struct task_struct *t, struct mm_struct *mm,
         goto out;
     }
 
+    // dyn[] used to live on the stack (256 * 16 bytes), which trips the
+    // 2048-byte frame limit on 5.10/5.15. Keep it on the heap instead.
+    dyn = kvmalloc_array(ndyn, sizeof(*dyn), GFP_KERNEL);
+    if (!dyn) {
+        ret = -ENOMEM;
+        goto out;
+    }
+
     if (kinj_read(t, e->dyn_va, dyn, ndyn * sizeof(*dyn))) {
         ret = -EFAULT;
         goto out;
@@ -445,6 +464,7 @@ static int kinj_elf_open(struct task_struct *t, struct mm_struct *mm,
     ret = 0;
 out:
     kfree(ph);
+    kvfree(dyn);
     return ret;
 }
 
@@ -634,9 +654,9 @@ static unsigned long kinj_map(struct mm_struct *mm, size_t size,
 
     // the caller is a kthread: current->mm is NULL, so this is legal
     mmget(mm);
-    kthread_use_mm(mm);
+    KINJ_USE_MM(mm);
     addr = vm_mmap(NULL, 0, size, prot, MAP_PRIVATE | MAP_ANONYMOUS, 0);
-    kthread_unuse_mm(mm);
+    KINJ_UNUSE_MM(mm);
     mmput(mm);
 
     if (IS_ERR_VALUE(addr))
@@ -647,9 +667,9 @@ static unsigned long kinj_map(struct mm_struct *mm, size_t size,
 static void kinj_unmap(struct mm_struct *mm, unsigned long addr, size_t size)
 {
     mmget(mm);
-    kthread_use_mm(mm);
+    KINJ_USE_MM(mm);
     vm_munmap(addr, size);
-    kthread_unuse_mm(mm);
+    KINJ_UNUSE_MM(mm);
     mmput(mm);
 }
 

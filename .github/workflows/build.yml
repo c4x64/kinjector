@@ -117,10 +117,14 @@ jobs:
         working-directory: kinjector
         run: |
           set -euo pipefail
+          # modules_prepare leaves Module.symvers empty, so modpost cannot
+          # resolve imported symbols. KBUILD_MODPOST_WARN keeps those as
+          # warnings instead of failing the .ko link.
           make -C kernel \
             ARCH=arm64 \
             CROSS_COMPILE=aarch64-linux-gnu- \
             CC=aarch64-linux-gnu-gcc \
+            KBUILD_MODPOST_WARN=1 \
             M="$PWD/source" \
             modules \
             -j"$(nproc)"
@@ -130,8 +134,9 @@ jobs:
         with:
           name: kinjector-${{ matrix.label }}
           path: |
-            kinjector/source/kinjector.ko
+            kinjector/source/*.ko
+            kinjector/source/*.mod
             kinjector/source/*.mod.c
             kinjector/source/modules.order
             kinjector/source/Module.symvers
-          if-no-files-found: warn
+          if-no-files-found: error
